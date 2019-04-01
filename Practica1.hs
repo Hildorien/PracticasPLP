@@ -270,8 +270,24 @@ foldNatConInt s z n = s (foldNatConInt s z (n-1))
 potenciaConInt :: Integer -> Integer -> Integer
 potenciaConInt a = foldNatConInt (\x -> a*x) 1
 
+data Polinomio a = X 
+                 | Cte a 
+                 | Suma (Polinomio a) (Polinomio a)
+                 | Prod (Polinomio a) (Polinomio a)
 
+foldPoli:: Num a => b -> (a->b) -> (b->b->b) -> (b->b->b) -> Polinomio a -> b 
+foldPoli casoX casoCte casoSuma casoProd p = case p of
+                                                  X -> casoX
+                                                  Cte a -> casoCte a 
+                                                  Suma a b -> casoSuma (rec a) (rec b)
+                                                  Prod a b -> casoProd (rec a) (rec b)
+                                                  where rec = foldPoli casoX casoCte casoSuma casoProd
 
+evaluar:: Num a => a-> Polinomio a -> a 
+evaluar a = foldPoli a (id) (+) (*) 
+
+parabola::Num a=> Polinomio a 
+parabola = Suma (Suma (Prod X X) X) (Cte 1)
 
 
 
