@@ -289,6 +289,122 @@ evaluar a = foldPoli a (id) (+) (*)
 parabola::Num a=> Polinomio a 
 parabola = Suma (Suma (Prod X X) X) (Cte 1)
 
+-- 19 
+type Conj a = (a -> Bool)
+
+--I
+vacio:: Conj a
+vacio = const False
+
+agregar::Eq a => a -> Conj a -> Conj a 
+agregar e c = (\elem -> (c elem) || (elem == e ))
+--II
+union:: Conj a -> Conj a -> Conj a 
+union c d = (\e -> c e || d e)
+
+interseccion:: Conj a -> Conj a -> Conj a 
+interseccion c d = (\e -> c e && d e)
+
+-- III 
+
+-- IV 
+singleton:: Eq a => a -> Conj a 
+singleton = (==)
+
+-- V 
+
+-- 20 
+type MatrizInfinita a = Integer -> Integer -> a 
+
+identidad:: (Num a ,Eq a) => MatrizInfinita a
+identidad = \i j -> if (i==j) then 1 else 0 
+
+cantor = \x y -> (x+y) * (x+y+1)`div`2+y
+
+pares = \x y -> (x,y)
+--I
+fila::Integer -> MatrizInfinita a -> [a] 
+fila f a = [a f j | j<-[0..]]
+
+columna::Integer -> MatrizInfinita a -> [a]
+columna c a = [a i c | i<-[0..]]
+
+--II 
+trasponer2:: MatrizInfinita a -> MatrizInfinita a 
+trasponer2  a = \i j -> a j i
+
+-- III 
+mapMatriz:: (a -> b) -> MatrizInfinita a -> MatrizInfinita b 
+mapMatriz f a = (\i j-> f (a i j))
+
+filterMatriz:: (a->Bool) -> MatrizInfinita a -> [a]
+filterMatriz p a = [a x (z-x) | z<-[0..], x<-[0..z], p (a z x)] 
+
+zipWithMatriz::(a->b->c)->MatrizInfinita a -> MatrizInfinita b -> MatrizInfinita c 
+zipWithMatriz f a b = \i j -> f (a i j) (b i j) 
+
+todosLosParesN p = [(x,z-x) | z<-[0..], x<-[0..z], p z x]
+
+
+-- 22 
+data AB a = Nil | Bin (AB a) a (AB a) deriving (Eq, Show)
+
+arbol1 = (Bin (Bin (Nil) 1 (Nil) ) 1 (Bin (Nil) 3 (Nil)))
+
+--I 
+foldAB::b->(b->a->b->b)-> AB a -> b
+foldAB fNil fBin t = case t of
+    Nil -> fNil 
+    Bin t1 a t2 -> fBin (rec t1) a (rec t2)
+    where rec = foldAB fNil fBin
+
+-- II 
+esNil::AB a -> Bool 
+esNil a = case a of
+   Nil -> True 
+   Bin i a d -> False
+
+altura:: AB a -> Integer 
+altura = foldAB 0 (\i r d-> 1 + max i d)
+
+hojas:: AB a -> Integer 
+hojas = foldAB 1 (\i r d -> i+d)
+
+nodos:: AB a -> Integer 
+nodos = foldAB 0 (\i r d -> 1 + i + d)
+
+ramas:: AB a -> [[a]] 
+ramas = foldAB [[]] (\i r d-> (map (r:) i) ++ (map (r:) d))
+
+
+espejoRec:: AB a -> AB a 
+espejoRec Nil = Nil 
+espejoRec (Bin t1 x t2) = Bin (espejoRec t2) x (espejoRec t1) 
+
+--espejo:: AB a -> AB a 
+--espejo = foldAB (id) (\i r d -> Bin d r i)
+
+-- III 
+--mismaEstructura:: AB a -> AB b -> Bool 
+--mismaEstructura = foldAB (const False) (\i r d -> \i2 r2 d2-> ())
+
+-- 23 
+data RoseTree a = Rose a [RoseTree a]
+-- I
+foldRose::(a->[b]->b)-> RoseTree a -> b 
+foldRose f (Rose x hs) = f x (map (foldRose f) hs)
+
+
+rosetree1 = Rose 1 [Rose 2 [Rose 3 [], Rose 4 []], Rose 5 []] 
+
+hojasRT::(Eq a) => RoseTree a -> [a]
+hojasRT = foldRose (\x hs -> if (hs == []) then [x] else concat hs) 
+
+distanciaRT::(Eq a) => RoseTree a -> [Int]
+distanciaRT = foldRose(\x hs-> if(not(hs == [])) then (map (+1) (concat hs)) else [0])
+
+alturaRT :: (Eq a) => RoseTree a -> Int 
+alturaRT = foldRose(\x hs -> if (hs == []) then 1 else 1+ (maximum hs) )
 
 
 
