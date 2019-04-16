@@ -53,6 +53,8 @@ recAB fNil fBin t = case t of
     Nil -> fNil 
     Bin t1 a t2 -> fBin (rec t1) a (rec t2) t1 t2
     where rec = recAB fNil fBin
+ 
+--foldAB' fNil fBin = recAB fNil (\izqrec r derrec t1 t2 -> fBin (izqrec) r (derrec)) 
 
 --foldAB 
 foldAB::b->(b->a->b->b)-> AB a -> b
@@ -70,7 +72,6 @@ nilOCumple f a (Bin t1 r t2) = f a r
 
 esABB :: Ord a => AB a -> Bool
 esABB = (\arbol -> recr True (\x xs rec -> if (xs == []) then True else ((x < head xs) && rec)) (inorder arbol)) 
---esABB = recAB True (\izqrec a derrec t1 t2 -> izqrec && derrec && (nilOCumple (<=) a t2) && (nilOCumple (>=) a t1)) ESTO NO ES LO QUE PIDEN
 
 esHeap :: (a -> a -> Bool)  -> AB a -> Bool
 esHeap f = recAB True (\izqrec a derrec t1 t2 -> izqrec && derrec && (nilOCumple (f) a t2) && (nilOCumple (f) a t1)) 
@@ -85,14 +86,17 @@ nodos:: AB a -> Integer
 nodos = foldAB 0 (\i r d -> 1 + i + d)
 
 insertarABB :: Ord a => AB a -> a -> AB a
-insertarABB = recAB (abHoja) (\izqrec r derrec t1 t2 ->  \a -> if (a > r) then (if (nilOCumple (<) a t2) then Bin (izqrec r) a t2 else Bin t1 r (derrec a))
-  else (if (nilOCumple (>=) a t1) then Bin t1 a (derrec r) else Bin (izqrec a) r t2) )
---insertarABB Nil a = abHoja a 
---insertarABB (Bin t1 r t2) a = if (a > r) then (if (nilOCumple (<) a t2) then Bin (insertarABB t1 r) a t2 else Bin t1 r (insertarABB t2 a))
---  else (if (nilOCumple (>=) a t1) then Bin t1 a (insertarABB t2 r) else Bin (insertarABB t1 a) r t2)
+insertarABB ab a = recAB (abHoja a) (\izqrec r derrec t1 t2 -> if (a > r) then Bin t1 r (derrec) else Bin (izqrec) r t2 ) ab
 
---insertarHeap :: (a -> a -> Bool) -> AB a -> a -> AB a
---insertarHeap f =  recAB (abHoja) (\izqrec r derrec t1 t2 -> \a -> if(completo t1 && (nodos t1) > (nodos t2)) then derrec a else ) 
+insertarHeap :: (a -> a -> Bool) -> AB a -> a -> AB a
+insertarHeap f =  recAB (abHoja) (\izqrec r derrec t1 t2 -> \a -> 
+  if (f a r) then 
+    if elHeapEstaLleno t1 t2 then Bin t1 a (derrec r) else Bin (izqrec r) a t2  
+  else 
+    if elHeapEstaLleno t1 t2 then Bin t1 r (derrec a) else Bin (izqrec a) r t2)
+
+elHeapEstaLleno :: AB a -> AB a -> Bool 
+elHeapEstaLleno t1 t2 =  (completo t1) && (nodos t1) > (nodos t2)
 
 truncar :: AB a -> Integer -> AB a
 truncar = recAB (siEsNilOCeroAltura) (\izqrec r derrec t1 t2 ->  \n -> if (n > 0) then Bin (izqrec (n-1)) r (derrec (n-1)) else Nil) 
@@ -107,7 +111,7 @@ allTests = test [
   "ejercicio3" ~: testsEj3,
   "ejercicio4" ~: testsEj4,
   "ejercicio5" ~: testsEj5,
-  --"ejercicio6" ~: testsEj6,
+  "ejercicio6" ~: testsEj6,
   "ejercicio7" ~: testsEj7
   ]
 
@@ -138,9 +142,14 @@ testsEj5 = test [
   False ~=? completo ab4
   ]
 
+
+a = foldl (insertarHeap (<)) Nil [4,8,15,16,23,42]
+
 testsEj6 = test [
   True ~=? esHeap (<) (insertarHeap (<) (insertarHeap (<) ab6 3) 1),
-  True ~=? esABB (insertarABB (insertarABB ab7 6) 9)
+  True ~=? esHeap (>) (insertarHeap (>) (insertarHeap (>) ab3 10) 11),
+  True ~=? esABB (insertarABB (insertarABB ab7 6) 9),
+  True ~=? completo (truncar a (altura a -1)) 
   ]
 
 testsEj7 = test [
