@@ -407,6 +407,10 @@ alturaRT :: (Eq a) => RoseTree a -> Int
 alturaRT = foldRose(\x hs -> if (hs == []) then 1 else 1+ (maximum hs) )
 
 
+fix:: (a->a)->a 
+fix f = let {x = f x} in x
 
+prueba = fix (\y-> y+1)
+prueba2 = fix (1:)
 
 
