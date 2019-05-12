@@ -33,6 +33,11 @@ inverso :: Float -> Prelude.Maybe Float
 inverso x = if ( x == 0) then Prelude.Nothing else (Prelude.Just (inver x))
 inver :: Float -> Float
 inver x = 1/x
+
+aEntero :: Prelude.Either Int Bool -> Int 
+aEntero (Prelude.Left a) = a
+aEntero (Prelude.Right a) = if (a == True) then 1 else 0
+
 -- 4.a
 limpiar:: [Char] -> [Char] -> [Char]  
 limpiar xs ys = [z | z<- ys, not (elem z xs) ]
@@ -67,6 +72,14 @@ arbol3 = Bin (Bin (Nil) False (Nil)) True (Bin (Nil) True (Nil))
 vacioAB :: AB a -> Bool 
 vacioAB Nil = True
 vacioAB _ = False
+
+negacionAB :: AB Bool -> AB Bool 
+negacionAB Nil = Nil
+negacionAB (Bin l x r) = Bin (negacionAB l) (not x) (negacionAB r)
+
+productoAB :: AB Int -> Int
+productoAB Nil = 1
+productoAB (Bin l x r) = x * (productoAB l) * (productoAB r)
 
 {-
 insertAB :: AB a -> a -> AB a 

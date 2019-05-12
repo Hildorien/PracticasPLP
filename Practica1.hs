@@ -78,6 +78,36 @@ listaDeUnNumero n = [x | x <- [1..n]]
 todosLosEnterosFinitos :: [[Integer]]
 todosLosEnterosFinitos = [xs | i<-[1..], xs <-[listaDeUnNumero i]]
 
+-- 9
+type DivideConquer a b = (a -> Bool)
+ -> (a -> b)
+ -> (a -> [a])
+ -> ([b] -> b)
+ -> a 
+ -> b 
+
+-- I 
+dc :: DivideConquer a b 
+dc trivial solve split combine x = if trivial x then solve x else combine (map dc1 (split x)) 
+ where dc1 = dc trivial solve split combine
+
+--II 
+mergeSort:: Ord a => [a] -> [a]
+mergeSort = dc (\l-> length l <= 1) id partirALaMitad (\[xs,ys]-> merge xs ys)
+
+partirALaMitad :: [a]->[[a]] 
+partirALaMitad xs = [take i xs, drop i xs] where i = div (length xs) 2
+
+merge:: Ord a => [a]->[a]->[a]
+merge = foldr (\x rec ->(filter (<= x) rec) ++ [x] ++ (filter (>x) rec))
+
+-- III
+mapDC :: (a -> b) -> [a] -> [b]
+mapDC f = dc (\l-> length l <= 1) (\xs-> if length xs == 0 then [] else [f(head xs)]) partirALaMitad concat 
+
+filterDC :: (a -> Bool) -> [a] -> [a]
+filterDC p = dc (\l-> length l <= 1) (\xs -> if (length xs == 0 || p(head xs)) then [] else xs ) partirALaMitad concat
+
 -- 10 
 -- I 
 sum'::[Integer] -> Integer 
@@ -121,6 +151,11 @@ permutacionesRec:: Eq a => [a] -> [[a]]
 permutacionesRec [] = [[]]
 permutacionesRec l = [a:x | a<-l,x<-(permutacionesRec $ filter (\x -> x /= a) l)]
 
+permutaciones:: [Integer] -> [[Integer]]
+permutaciones = foldr (\x rec -> concatMap (agregarEnTodasLasPosiciones x) rec ) [[]] where agregarEnTodasLasPosiciones j js = [(fst h) ++ [j] ++ (snd h) | h <- (partir js)]
+
+
+agregarEnTodasLasPos j js = [(fst h) ++ [j] ++ (snd h) | h <- (partir js)]
 --permutaciones:: Eq a => [a] -> [[a]]
 --permutaciones = foldr (\p rec -> concatMap (\x-> x:rec(filter(\a -> a /= x) rec)) rec) [[]]
 
@@ -129,8 +164,6 @@ permutacionesRec l = [a:x | a<-l,x<-(permutacionesRec $ filter (\x -> x /= a) l)
 partes::[a] -> [[a]]
 partes = foldr (\x rec -> rec ++ map (x:) rec) [[]]
 
-partes2::[a] -> [[a]]
-partes2 = foldl (\acum x -> acum ++ map(x:) acum)[[]]
 
 -- II 
 prefijos::[a] -> [[a]]
@@ -143,6 +176,9 @@ prefijos' (x:xs) = [] : map (x:) (prefijos xs)
 -- III 
 sublistas::[a] -> [[a]]
 sublistas xs = [] : (concatMap(\x -> tail(prefijos x)) (sufijos xs))
+
+sublistas'::[a] -> [[a]]
+sublistas' xs = [[]] ++ [take j (drop i xs) | i<-[0..length xs], j <-[1..length xs -i]]
 
 sufijos::[a] -> [[a]] 
 sufijos = foldr (\x rec -> (x:(head rec)):rec) [[]]
@@ -158,19 +194,26 @@ recr z f (x:xs) = f x xs (recr z f xs)
 sacarUna:: Eq a => a -> [a] -> [a]
 sacarUna e = recr [] (\x xs rec -> if e == x then xs else x:rec)
 
+sacarUna':: Eq a => a -> [a] -> [a]
+sacarUna' e = foldr (\x rec -> if e == x then rec else x:rec) []
 
 -- 13 
 -- I
 genListaRec:: (Eq a, Num a) => a->(a->a)->Integer->[a]
 genListaRec a f 0 = []
-genListaRec a f b = f a : (genListaRec (f a) f (b-1)) 
+genListaRec a f b = a : (genListaRec (f a) f (b-1)) 
 
 generaLista a f b = a: map f [a..(a-1)+(b-1)]
 
 generaLista' a b = [a..(a-1)+(b-1)]
 
+genLista::(Eq a, Num a) => a->(a->a)->Integer->[a]
+genLista a f b = foldr(\x rec -> rec ++ [f(head(reverse rec))]) [a] [1..b-1]
+
+
 -- II 
-desdeHasta a b = genListaRec a succ (b-a)
+desdeHasta a b = genListaRec a succ (b+1-a)
+desdeHasta' a b = generaLista a succ (b+1-a)
 
 -- 14
 mapPares :: (a-> (b-> c)) -> [(a,b)] -> [c] 
@@ -210,6 +253,7 @@ mapDobleRec f (x:xs) (y:ys) = f x y : mapDobleRec f xs ys
 mapDoble:: (a -> b -> c) -> [a] -> [b] -> [c]
 mapDoble f xs ys = mapPares f (armarPares xs ys)
 
+--15
 sumaMat :: [[Int]] -> [[Int]] -> [[Int]]
 sumaMat = foldr (\x rec -> \ys-> (zipWith (+) x (head ys)): rec (tail ys)) (const [])
 
@@ -220,8 +264,30 @@ trasponerRec xs =  (map head xs) : trasponerRec (map tail xs)
 trasponer :: [[Int]] -> [[Int]]
 trasponer l = [ map (!! i) l | i<-[0..(length (head l) - 1)] ]
 
+trasponer' :: [[Int]] -> [[Int]]
+trasponer' xss = foldr (zipWith (:)) [ [] | i <-[1..length(head xss)]] xss
+
 -- 16 
--- I 
+generate :: ([a] -> Bool) -> ([a] -> a) -> [a]
+generate stop next = generateFrom stop next []
+
+generateFrom :: ([a] -> Bool) -> ([a] -> a) -> [a] -> [a]
+generateFrom stop next xs
+ | stop xs = init xs 
+ | otherwise = generateFrom stop next (xs ++ [next xs])
+--I
+generateBase:: ([a] -> Bool) -> a -> (a -> a) -> [a]
+generateBase stop base next = generate stop (\xs-> if (length xs == 0) then base else next (last xs))
+-- II
+factoriales :: Int -> [Int]
+factoriales n = generate ((==n).length) (\l -> if null l then 1 else (last l)*(length l))
+-- III
+iterateN :: Int -> (a -> a) -> a -> [a]
+iterateN n f x = generateBase ((==n).length) x (\u-> f u)
+--iterateN n f x = generate ((==n).length) (\l -> if null l then x else f(last l)) 
+-- IV 
+generateFrom' :: ([a] -> Bool) -> ([a] -> a) -> [a] -> [a]
+generateFrom' stop next = last.(takeWhile (not.stop)).(iterate (\ys -> ys ++ [next ys]))
 
 -- 17 
 
@@ -270,6 +336,7 @@ foldNatConInt s z n = s (foldNatConInt s z (n-1))
 potenciaConInt :: Integer -> Integer -> Integer
 potenciaConInt a = foldNatConInt (\x -> a*x) 1
 
+-- 18
 data Polinomio a = X 
                  | Cte a 
                  | Suma (Polinomio a) (Polinomio a)
@@ -306,6 +373,8 @@ interseccion:: Conj a -> Conj a -> Conj a
 interseccion c d = (\e -> c e && d e)
 
 -- III 
+conjuntoInfinito :: Conj a
+conjuntoInfinito = const True
 
 -- IV 
 singleton:: Eq a => a -> Conj a 
@@ -338,19 +407,43 @@ mapMatriz:: (a -> b) -> MatrizInfinita a -> MatrizInfinita b
 mapMatriz f a = (\i j-> f (a i j))
 
 filterMatriz:: (a->Bool) -> MatrizInfinita a -> [a]
-filterMatriz p a = [a x (z-x) | z<-[0..], x<-[0..z], p (a z x)] 
+filterMatriz p a = [a x (z-x) | z<-[0..], x<-[0..z], p (a x (z-x))] 
 
 zipWithMatriz::(a->b->c)->MatrizInfinita a -> MatrizInfinita b -> MatrizInfinita c 
 zipWithMatriz f a b = \i j -> f (a i j) (b i j) 
 
 todosLosParesN p = [(x,z-x) | z<-[0..], x<-[0..z], p z x]
+-- IV 
+sumaMatriz :: Num a => MatrizInfinita a-> MatrizInfinita a -> MatrizInfinita a
+sumaMatriz = zipWithMatriz (+)
 
+zipMatriz :: MatrizInfinita a -> MatrizInfinita b -> MatrizInfinita (a,b)
+zipMatriz = zipWithMatriz (\x y -> (x,y))
+
+-- 21 
+data AHD tInterno tHoja = Hoja tHoja | Rama tInterno (AHD tInterno tHoja) | Bin' (AHD tInterno tHoja) tInterno (AHD tInterno tHoja)
+
+arbolCharString = Bin' (Hoja "hola") 'b' (Rama 'c' (Hoja "chau"))
+
+arbolIntBool = Rama 1 (Bin'(Hoja True)(-2)(Hoja False))
+--I
+foldAHD::(b->c)->(a->c->c)->(c->a->c->c)->AHD a b->c
+foldAHD fHoja fRama fBin t = case t of
+ Hoja h -> fHoja h
+ Rama r t -> fRama r (rec t)
+ Bin' t1 r t2 -> fBin (rec t1) r (rec t2)
+ where rec = foldAHD fHoja fRama fBin
+
+--II
+mapAHD:: (a->b) -> (c->d) -> AHD a c -> AHD b d
+mapAHD fNodos gHojas = foldAHD (\h-> Hoja (gHojas h) ) (\i rrec -> Rama (fNodos i) rrec) (\izqrec r derrec -> Bin' izqrec (fNodos r) derrec) 
 
 -- 22 
 data AB a = Nil | Bin (AB a) a (AB a) deriving (Eq, Show)
 
 arbol1 = (Bin (Bin (Nil) 1 (Nil) ) 1 (Bin (Nil) 3 (Nil)))
 
+arbol2 = (Bin (Bin (Nil) 3 (Nil) ) 2 (Bin (Nil) 1 (Nil)))
 --I 
 foldAB::b->(b->a->b->b)-> AB a -> b
 foldAB fNil fBin t = case t of
@@ -381,12 +474,25 @@ espejoRec:: AB a -> AB a
 espejoRec Nil = Nil 
 espejoRec (Bin t1 x t2) = Bin (espejoRec t2) x (espejoRec t1) 
 
---espejo:: AB a -> AB a 
---espejo = foldAB (id) (\i r d -> Bin d r i)
+espejo:: AB a -> AB a 
+espejo = foldAB (Nil) (\i r d -> Bin d r i)
 
 -- III 
---mismaEstructura:: AB a -> AB b -> Bool 
---mismaEstructura = foldAB (const False) (\i r d -> \i2 r2 d2-> ())
+root:: AB a -> a 
+root (Bin i x d) = x 
+
+izqAB :: AB a -> AB a 
+izqAB (Bin i x d) = i
+
+derAB :: AB a -> AB a 
+derAB (Bin i x d) = d 
+
+mismaEstructura:: AB a -> AB b -> Bool 
+mismaEstructura t1 t2 = nodos t1 == nodos t2 && 
+ hojas t1 == hojas t2 && 
+ altura t1 == altura t2 && 
+ and (zipWith (\xs ys -> length xs == length ys) (ramas t1) (ramas t2))
+--mismaEstructura = foldAB(\izqrec r derrec -> \arbol -> if (esNil arbol) then False else ( root arbol == r && izqrec (izqAB arbol) && derrec (derAB arbol))) 
 
 -- 23 
 data RoseTree a = Rose a [RoseTree a]
