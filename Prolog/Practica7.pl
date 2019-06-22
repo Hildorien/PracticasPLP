@@ -166,19 +166,22 @@ esABB(bin(I,R,D)) :- inorder(bin(I,R,D),L), sort(L,R).
 
 %IV 
 %aBBInsertar(+X,+T1,-T2)
-%aBBInsertar(X,Nil,bin(Nil,X,Nil)).
-%aBBInsertar(X,bin(I,R,D),bin(I2,R,D2)) :- X > Y , aBBInsertar(X, bin(I,R,D), bin(I,R,D2)). 
-%aBBInsertar(X,bin(I,R,D),bin(I2,R,D2)) :- X <= Y , aBBInsertar(X, bin(I,R,D), bin(I2,R,D)). 
+aBBInsertar(X,nil,bin(nil,X,nil)).
+aBBInsertar(X,bin(I,R,D),bin(I2,R,D)) :- X < R , aBBInsertar(X, I, I2). 
+aBBInsertar(X,bin(I,R,D),bin(I,R,D2)) :- X >= R , aBBInsertar(X, D, D2). 
 
 %Ejercicio 14 
 armarPares(X,Y) :- desde(0,S), between(0,S,X), Y is S-X.
 coprimos(X,Y) :- armarPares(X,Y), 1 =:= gcd(X,Y).
 
 %Ejercicio 15 
-listasQueSuman(0,[[]]).
-listasQueSuman(N,L) :- between(1,N,X) , Y is N-X , listasQueSuman(Y,XS) , append(XS,W,L).   
+listasQueSumanDeLong(0,0,[]).
+listasQueSumanDeLong(N,M,[X|XS]) :- N >= 0 , M >= 0, between(0,N,X), Z is N-X, W is M-1 , listasQueSumanDeLong(Z,W,XS).  
 
-%cuadradoSemiLatino(N,XS) :- between(0,N-1,X), listasQueSuman(X,L), length(L,N), append(L,XS).   
+cuadradoSemiLatinoAux(_,0,[],_).
+cuadradoSemiLatinoAux(M,N,[X|XS],S) :- N2 is N-1, listasQueSumanDeLong(S,M,X), cuadradoSemiLatinoAux(M,N2,XS,S).
+
+cuadradoSemiLatino(N,XS) :- length(XS,N) , desde(0,S), cuadradoSemiLatinoAux(N,N,XS,S).
 
 %Ejercicio 16
 %I
@@ -221,14 +224,27 @@ conjuntoDeNaturales([X|XS]) :- natural(X) , conjuntoDeNaturales(XS).
 %III
 conjuntoDeNaturalesMalo(X) :- not( (not(natural(E)), pertenece(E,X)) ). % SOLO CHEQUEA LA PRIMER INSTANCIACION DE E.
 
+%Ejercicio 23 
+esNodo(G,X).
+esArista(G,X,Y).
+%I caminoSimple(+G,+D,+H,?L)
+caminoSimple(G,D,H,[D,X|XS]):- nonvar([D,X|XS]) , last([D,X|XS],H),  esArista(G,D,X), caminoSimple(G,X,H,XS).
+caminoSimple(G,D,H,[D|L]) :- var(L) , esArista(D,X) , not(esArista(Y,D), esArista(X,Y)), caminoSimple(G,X,H,[X|L]).
+%II caminoHamiltoneano(+G,?L) 
+caminoHamiltoneano(G,L) :- esNodo(G,X) , esNodo(G,Y) , X /= Y , caminoSimple(G,X,Y,L).
+%III 
+esConexo(G) :- esNodo(G,X) , esNodo(G,Y) , caminoSimple(G,X,Y,L).
+%IV
+esEstrella(G) :- esConexo(G) , esNodo(G,X) , esNodo(G,Y), esArista(X,Y).
 
 %Ejercicio 24 
 %I
 arbol(nil). 
 arbol(bin(I,R,D)) :- arbol(I) , arbol(D).
 %II nodosEn(?A,+L)
-nodosEn(nil,[]).
-nodosEn(bin(nil,X,nil), [X]).
-nodosEn(bin(I,R,D),[X|XS]) :- R = X , nodosEn(bin(I,R,D), XS) . 
-nodosEn(bin(I,R,D),[X|XS]) :- R \= X , nodosEn(D, [X|XS]) , nodosEn(I, [X|XS]).
-%III
+nodosEn(nil,L).
+nodosEn(bin(nil,X,nil), L) :- member(X,L).
+nodosEn(bin(I,X,D),L) :- member(X,L), nodosEn(I,L) , nodosEn(D,L).
+
+%III sinRepEn(-A,+L)
+
