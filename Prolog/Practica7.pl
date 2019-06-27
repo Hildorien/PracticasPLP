@@ -69,13 +69,15 @@ aplanar(X,[X]) :- not(is_list(X)).
 aplanar([X|XS], Y) :- aplanar(X,Z) , aplanar(XS,W) , concatenar(Z,W,Y).   
 
 %Ejercicio 7. 
+%palindromo(+L,-L1).
 palindromo(X,Y) :- reverso(X,W), concatenar(X,W,Y).
 
+%iesimo(?I,+L,-X).
 iesimo(0,[X|_],X).
 iesimo(I,[X|XS],Y) :- length([X|XS],W), between(0,W,I), N is I-1, iesimo(N,XS, Y).
 
 %Ejercicio 8 
-%I
+%I interseccion(+L1,+L2,-L3)
 interseccion([],_, []).
 interseccion([X|XS],L,Y) :- not(member(X,L)) , interseccion(XS,L,Y).
 interseccion([X|XS],L,Y) :- member(X,L) , interseccion(XS,L,Y) , member(X,Y).
@@ -89,7 +91,6 @@ split(N,L,L1,L2) :- length(L,M), N1 is M-N, prefijoConLong(L1,N,L), sufijoConLon
 %III 
 %borrar(+L,+X,-XS) 
 borrar([],_,[]).
-borrar([X],X,[]).
 borrar([X|XS], X, L ) :-  borrar(XS,X,L).
 borrar([X|XS], Y, [X|Rec]) :- X\= Y, borrar(XS,Y,Rec).  
 
@@ -97,7 +98,7 @@ borrar([X|XS], Y, [X|Rec]) :- X\= Y, borrar(XS,Y,Rec).
 sacarDuplicados([],[]).
 sacarDuplicados([X|XS], [X | Rec]) :- borrar(XS,X,L), sacarDuplicados(L,Rec). 
 
-%V
+%V permutaciones(+L1,?L2)
 insertar(X, L, LX) :- append(P, S, L), append(P, [X|S], LX).
 
 permutaciones([X],[X]).
@@ -111,7 +112,8 @@ sonTodasSublistas([X|XS], L) :- sublista(L,X) , sonTodasSublistas(XS,L).
 
 concatenarTodas([],[]).
 concatenarTodas([X|XS], LL) :- concatenarTodas(XS, Rec) , append(X,Rec,LL).
-
+%length(?L,?N).
+%reparto(+L,+N,-LL)
 reparto(L,N,LL) :- length(LL,N) , sonTodasSublistas(LL,L) , concatenarTodas(LL,L). 
 
 
@@ -153,12 +155,12 @@ cantidadNodos(bin(I,_,D), N) :- cantidadNodos(I,NI), cantidadNodos(D,ND), N is (
 %Ejercicio 13 
 %I inorder(+AB,-Lista)
 inorder(nil, []).
-inorder(bin(I,R,D),L) :- inorder(I,L1), inorder(D,L2), append(L1, [X| L2], L).
+inorder(bin(I,R,D),L) :- inorder(I,L1), inorder(D,L2), append(L1, [R| L2], L).
 
 %II
 %arbolConInorder(+L,-AB)
 arbolConInorder([],nil).
-arbolConInorder(L, bin(I,R,D)) :- 
+arbolConInorder(L, bin(I,R,D)) :- reparto(L,2,[LI | [X | LD]]) , arbolConInorder(LI,I) , arbolConInorder(LD,D).
 
 %III 
 esABB(nil). 
@@ -228,15 +230,16 @@ conjuntoDeNaturalesMalo(X) :- not( (not(natural(E)), pertenece(E,X)) ). % SOLO C
 esNodo(G,X).
 esArista(G,X,Y).
 %I caminoSimple(+G,+D,+H,?L)
-caminoSimple(G,D,H,[D,X|XS]):- nonvar([D,X|XS]) , last([D,X|XS],H),  esArista(G,D,X), caminoSimple(G,X,H,XS).
-caminoSimple(G,D,H,[D|L]) :- var(L) , esArista(D,X) , not(esArista(Y,D), esArista(X,Y)), caminoSimple(G,X,H,[X|L]).
-%II caminoHamiltoneano(+G,?L) 
-caminoHamiltoneano(G,L) :- esNodo(G,X) , esNodo(G,Y) , X /= Y , caminoSimple(G,X,Y,L).
-%III 
-esConexo(G) :- esNodo(G,X) , esNodo(G,Y) , caminoSimple(G,X,Y,L).
-%IV
-esEstrella(G) :- esConexo(G) , esNodo(G,X) , esNodo(G,Y), esArista(X,Y).
+caminoSimple(G,D,D,[D]).
+caminoSimple(G,D,H,[D|L]) :- esArista(D,X) , caminoSimple(G,X,H,L) , not(member(X,L)) , last(L,H). 
+%II caminoHamiltoneano(+G,?L)  
+%III esConexo(+G)
+esConexo(G) :- not(esNodo(G,X) , not(esArista(X,Y))).
+%IV esEstrella(+G)
+cantidadNodos(G,N) :- esNodo(G,X), cantidadNodos(G,N+1).
+gradoDe(X,Y) :- esArista(X,Z) , gradoDe(X,Y+1).
 
+%esEstrella(G): esConexo(G), not(esNodo(G,X), gradoDe(X,N) , cantidadNodos(G,Y) , N < Y-1).
 %Ejercicio 24 
 %I
 arbol(nil). 
@@ -247,4 +250,9 @@ nodosEn(bin(nil,X,nil), L) :- member(X,L).
 nodosEn(bin(I,X,D),L) :- member(X,L), nodosEn(I,L) , nodosEn(D,L).
 
 %III sinRepEn(-A,+L)
+particionar2([],[],[]).
+particionar2([X|L], [X|L1], L2) :- particionar2(L,L1,L2).
+particionar2([X|L], L1, [X|L2]) :- particionar2(L,L1,L2). 
 
+sinRepEn(nil,[]).
+sinRepEn(bin(I,R,D),L) :- member(R,L) , borrar(L,R,LL) , particionar2(LL,LI,LD) , sinRepEn(I,LI), sinRepEn(D,LD).
